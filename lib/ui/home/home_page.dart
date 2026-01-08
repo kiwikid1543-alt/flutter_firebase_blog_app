@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_firebase_blog_app/data/model/post.dart';
 import 'package:flutter_firebase_blog_app/ui/detail/detail_page.dart';
+import 'package:flutter_firebase_blog_app/ui/home/home_view_model.dart';
 import 'package:flutter_firebase_blog_app/ui/write/write_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class HomePage extends StatelessWidget {
   @override
@@ -11,7 +14,9 @@ class HomePage extends StatelessWidget {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => WritePage()),
+            MaterialPageRoute(builder: (context) {
+              return WritePage(null);
+            }),
           );
         },
         child: Icon(Icons.edit),
@@ -24,14 +29,20 @@ class HomePage extends StatelessWidget {
           children: [
             Text('최근 글', style: TextStyle(fontWeight: FontWeight.bold)),
             SizedBox(height: 20),
-            Expanded(
-              child: ListView.separated(
-                itemCount: 10,
-                separatorBuilder: (context, index) => SizedBox(height: 10),
-                itemBuilder: (context, index) {
-                  return item();
-                },
-              ),
+            Consumer(
+              builder: (context, ref, child) {
+                final posts = ref.watch(homeViewModelProvider);
+                return Expanded(
+                  child: ListView.separated(
+                    itemCount: posts.length,
+                    separatorBuilder: (context, index) => SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      final post = posts[index];
+                      return item(post);
+                    },
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -39,7 +50,7 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget item() {
+  Widget item(Post post) {
     // TODO 빌더로 감싸주는 이유?
     return Builder(
       builder: (context) {
@@ -50,7 +61,7 @@ class HomePage extends StatelessWidget {
               context,
               MaterialPageRoute(
                 builder: (context) {
-                  return DetailPage();
+                  return DetailPage(post);
                 },
               ),
             );
@@ -67,10 +78,7 @@ class HomePage extends StatelessWidget {
                   height: 120,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
-                    child: Image.network(
-                      'https://picsum.photos/200/300',
-                      fit: BoxFit.cover,
-                    ),
+                    child: Image.network(post.imageUrl, fit: BoxFit.cover),
                   ),
                 ),
                 Container(
@@ -86,7 +94,7 @@ class HomePage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Today I learned',
+                        post.title,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
@@ -94,13 +102,13 @@ class HomePage extends StatelessWidget {
                       ),
                       Spacer(),
                       Text(
-                        '플러터 배웠읍니다.플러터 배웠읍니다.플러터 배웠읍니다.플러터 배웠읍니다.플러터 배웠읍니다.플러터 배웠읍니다.',
+                        post.content,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: Colors.grey, fontSize: 12),
                       ),
                       SizedBox(height: 4),
                       Text(
-                        '2022.02.01',
+                        post.createdAt.toIso8601String(),
                         style: TextStyle(color: Colors.grey, fontSize: 12),
                       ),
                     ],

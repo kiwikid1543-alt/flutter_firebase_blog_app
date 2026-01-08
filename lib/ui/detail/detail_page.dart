@@ -1,21 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_firebase_blog_app/data/model/post.dart';
+import 'package:flutter_firebase_blog_app/ui/detail/detail_view_model.dart';
 import 'package:flutter_firebase_blog_app/ui/write/write_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class DetailPage extends StatelessWidget {
+class DetailPage extends ConsumerWidget {
+  DetailPage(this.post);
+
+  Post post;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(detailViewModelProvider(post));
+
     return Scaffold(
       appBar: AppBar(
         actions: [
-          iconButton(Icons.delete, () {
+          iconButton(Icons.delete, () async {
             print('삭제아이콘터치함');
+            final vm = ref.read(detailViewModelProvider(post).notifier);
+            final result = await vm.deletePost();
+            if (result) {
+              Navigator.pop(context);
+            }
           }),
           iconButton(Icons.edit, () {
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) {
-                  return WritePage();
+                  return WritePage(post);
                 },
               ),
             );
@@ -26,7 +40,7 @@ class DetailPage extends StatelessWidget {
       body: ListView(
         padding: EdgeInsets.only(bottom: 500),
         children: [
-          Image.network('https://picsum.photos/200/300', fit: BoxFit.cover),
+          Image.network(state.imageUrl, fit: BoxFit.cover),
           SizedBox(height: 20),
           Padding(
             padding: EdgeInsetsGeometry.symmetric(horizontal: 20),
@@ -34,17 +48,17 @@ class DetailPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Today I learned',
+                  state.title,
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                 ),
                 SizedBox(height: 14),
-                Text('김동준', style: TextStyle(fontSize: 16)),
+                Text(state.writer, style: TextStyle(fontSize: 16)),
                 Text(
-                  '2023.04.03',
+                  state.createdAt.toIso8601String(),
                   style: TextStyle(fontWeight: FontWeight.w200, fontSize: 14),
                 ),
                 SizedBox(height: 14),
-                Text('플러터의 그리드뷰를 배웠습니다.' * 10, style: TextStyle(fontSize: 16)),
+                Text(state.content, style: TextStyle(fontSize: 16)),
               ],
             ),
           ),
